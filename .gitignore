@@ -22,6 +22,8 @@
 *.gcno
 *.gz
 *.i
+!drivers/input/touchscreen/focaltech_touch/include/firmware/*.i
+!drivers/input/touchscreen/focaltech_touch_n9/include/firmware/*.i
 *.ko
 *.lex.c
 *.ll
