@@ -31,6 +31,10 @@ ifeq ($(CONFIG_ARCH_SDM450), y)
 include $(srctree)/techpack/audio/config/sdm450auto.conf
 export $(shell sed 's/=.*//' $(srctree)/techpack/audio/config/sdm450auto.conf)
 endif
+ifeq ($(CONFIG_ARCH_SDM439), y)
+include $(srctree)/techpack/audio/config/sdm450auto.conf
+export $(shell sed 's/=.*//' $(srctree)/techpack/audio/config/sdm450auto.conf)
+endif
 
 # Use USERINCLUDE when you must reference the UAPI directories only.
 USERINCLUDE     += \
@@ -72,6 +76,10 @@ LINUXINCLUDE    += \
                 -include $(srctree)/techpack/audio/config/sdm660autoconf.h
 endif
 ifeq ($(CONFIG_ARCH_SDM450), y)
+LINUXINCLUDE    += \
+                -include $(srctree)/techpack/audio/config/sdm450autoconf.h
+endif
+ifeq ($(CONFIG_ARCH_SDM439), y)
 LINUXINCLUDE    += \
                 -include $(srctree)/techpack/audio/config/sdm450autoconf.h
 endif
