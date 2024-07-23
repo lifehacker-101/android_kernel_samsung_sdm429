@@ -799,6 +799,9 @@ struct mdss_panel_info {
 	u32 out_format;
 	u32 rst_seq[MDSS_DSI_RST_SEQ_LEN];
 	u32 rst_seq_len;
+//+bug 600732, wangcong.wt, modify, 2020/11/11, Modify ft8006p tianma timming sequence
+    u32 first_on_backlight;
+//-bug 600732, wangcong.wt, modify, 2020/11/11, Modify ft8006p tianma timming sequence
 	u32 vic; /* video identification code */
 	u32 deep_color;
 	struct mdss_rect roi;
@@ -934,6 +937,11 @@ struct mdss_panel_info {
 
 	/* HDR properties of display panel*/
 	struct mdss_panel_hdr_properties hdr_properties;
+
+//+bug 600732, wangcong.wt, add, 2020/11/11, Add Lcd backlight map
+	int blmap_size;
+	int *blmap;
+//+bug 600732, wangcong.wt, add, 2020/11/11, Add Lcd backlight map
 
 	/* esc clk recommended for the panel */
 	u32 esc_clk_rate_hz;
