@@ -33,7 +33,7 @@
  * overdrive(30ms).
  */
 #define QPNP_VIB_MIN_PLAY_MS		50
-#define QPNP_VIB_PLAY_MS		5000
+#define QPNP_VIB_PLAY_MS		10000
 #define QPNP_VIB_MAX_PLAY_MS		15000
 #define QPNP_VIB_OVERDRIVE_PLAY_MS	30
 
@@ -55,6 +55,8 @@ struct vib_ldo_chip {
 	bool			vib_enabled;
 	bool			disable_overdrive;
 };
+
+static struct vib_ldo_chip *g_chip;
 
 static inline int qpnp_vib_ldo_poll_status(struct vib_ldo_chip *chip)
 {
@@ -83,6 +85,8 @@ static int qpnp_vib_ldo_set_voltage(struct vib_ldo_chip *chip, int new_uV)
 	u8 reg[2];
 	int ret;
 
+	pr_info("[VIB]%s, ldo_uV: %d new_uV: %d\n",__func__, chip->ldo_uV, new_uV);
+
 	if (chip->ldo_uV == new_uV)
 		return 0;
 
@@ -108,9 +112,11 @@ static int qpnp_vib_ldo_set_voltage(struct vib_ldo_chip *chip, int new_uV)
 	return ret;
 }
 
-static inline int qpnp_vib_ldo_enable(struct vib_ldo_chip *chip, bool enable)
+inline int qpnp_vib_ldo_enable(struct vib_ldo_chip *chip, bool enable)
 {
 	int ret;
+
+	pr_info("[VIB]%s, vib_enabled: %d enable: %d\n",__func__, chip->vib_enabled, enable);
 
 	if (chip->vib_enabled == enable)
 		return 0;
@@ -136,6 +142,12 @@ static inline int qpnp_vib_ldo_enable(struct vib_ldo_chip *chip, bool enable)
 	chip->vib_enabled = enable;
 
 	return ret;
+}
+
+extern void ss_vib_ldo_enable(bool enable)
+{
+	g_chip->state = enable;
+	schedule_work(&g_chip->vib_work);
 }
 
 static int qpnp_vibrator_play_on(struct vib_ldo_chip *chip)
@@ -169,11 +181,13 @@ static int qpnp_vibrator_play_on(struct vib_ldo_chip *chip)
 	return ret;
 }
 
-static void qpnp_vib_work(struct work_struct *work)
+void qpnp_vib_work(struct work_struct *work)
 {
 	struct vib_ldo_chip *chip = container_of(work, struct vib_ldo_chip,
 						vib_work);
 	int ret = 0;
+
+	pr_info("[VIB]%s\n",__func__);
 
 	if (chip->state) {
 		if (!chip->vib_enabled)
@@ -504,6 +518,8 @@ static int qpnp_vibrator_ldo_probe(struct platform_device *pdev)
 	pr_info("Vibrator LDO successfully registered: uV = %d, overdrive = %s\n",
 		chip->vmax_uV,
 		chip->disable_overdrive ? "disabled" : "enabled");
+
+	g_chip = chip;
 	return 0;
 
 sysfs_fail:
