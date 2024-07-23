@@ -571,8 +571,14 @@ static void msm_gpio_dbg_show(struct seq_file *s, struct gpio_chip *chip)
 	unsigned gpio = chip->base;
 	unsigned i;
 
-	for (i = 0; i < chip->ngpio; i++, gpio++)
+	for (i = 0; i < chip->ngpio; i++, gpio++) {
+/* bug 445622, wangminglin.wt, 2019/0514, Modify bypass GPIO pins owned by TZ, start*/
+	/*Bypass GPIO%d pins owned by TZ*/
+		switch (gpio)
+			case 0 ... 3: case 135 ... 138: continue;
+/* bug 445622, wangminglin.wt, 2019/0514, Modify bypass GPIO pins owned by TZ, end*/
 		msm_gpio_dbg_show_one(s, NULL, chip, i, gpio);
+	}
 }
 
 #else
