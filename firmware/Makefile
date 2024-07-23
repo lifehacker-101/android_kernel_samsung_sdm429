@@ -10,6 +10,41 @@ fwabs := $(addprefix $(srctree)/,$(filter-out /%,$(fwdir)))$(filter /%,$(fwdir))
 
 fw-external-y := $(subst $(quote),,$(CONFIG_EXTRA_FIRMWARE))
 
+# There are three cases to care about:
+# 1. Building kernel with CONFIG_FIRMWARE_IN_KERNEL=y -- $(fw-shipped-y) should
+#    include the firmware files to include, according to .config
+# 2. 'make modules_install', which will install firmware for modules, and
+#    _also_ for the in-kernel drivers when CONFIG_FIRMWARE_IN_KERNEL=n
+# 3. 'make firmware_install', which installs all firmware, unconditionally.
+
+# For the former two cases we want $(fw-shipped-y) and $(fw-shipped-m) to be
+# accurate. In the latter case it doesn't matter -- it'll use $(fw-shipped-all).
+# But be aware that the config file might not be included at all.
+
+#+bug601075,sheqihao.wt, modify, 2020.11.13, N8-R Project tp Bringup
+fw-shipped-$(CONFIG_TOUCHSCREEN_FTS) += focal-ft3617-txd.img
+fw-shipped-$(CONFIG_TOUCHSCREEN_FTS) += focal-ft3617-txd.ini
+#+Bug601075, shenwenbin.wt, modify, 20201230 mv N8_Q code to N8_R
+fw-shipped-$(CONFIG_TOUCHSCREEN_FTS) += focal-ft3617-ld-vid60.img
+fw-shipped-$(CONFIG_TOUCHSCREEN_FTS) += focal-ft3617-ld-vid60.ini
+fw-shipped-$(CONFIG_TOUCHSCREEN_FTS) += focal-ft3528-txd-vidf0.img
+fw-shipped-$(CONFIG_TOUCHSCREEN_FTS) += focal-ft3528-txd-vidf0.ini
+#fw-shipped-$(CONFIG_TOUCHSCREEN_FTS) += focal-ft8201-truly.ini
+fw-shipped-$(CONFIG_TOUCHSCREEN_FTS) += focal-ft3617003-ld-vid60.img
+fw-shipped-$(CONFIG_TOUCHSCREEN_FTS) += focal-ft3617003-ld-vid60.ini
+#-Bug601075, shenwenbin.wt, modify, 20201230 mv N8_Q code to N8_R
+#-bug601075,sheqihao.wt, modify, 2020.11.13, N8-R Project tp Bringup
+# //+Bug604581, shenwenbin.wt, add, 20201203, panel noise and TP fiddling report point
+fw-shipped-$(CONFIG_TOUCHSCREEN_FTS) += focal-ft3617003-ld-sc-vid61.img
+fw-shipped-$(CONFIG_TOUCHSCREEN_FTS) += focal-ft3617003-ld-sc-vid61.ini
+fw-shipped-$(CONFIG_TOUCHSCREEN_FTS) += focal-ft3617003-ld-gh-vid62.img
+fw-shipped-$(CONFIG_TOUCHSCREEN_FTS) += focal-ft3617003-ld-gh-vid62.ini
+fw-shipped-$(CONFIG_TOUCHSCREEN_FTS) += focal-ft3617-ld-gh-vid63.img
+fw-shipped-$(CONFIG_TOUCHSCREEN_FTS) += focal-ft3617-ld-gh-vid63.ini
+fw-shipped-$(CONFIG_TOUCHSCREEN_FTS) += focal-ft3617-ld-jh-vid64.img
+fw-shipped-$(CONFIG_TOUCHSCREEN_FTS) += focal-ft3617-ld-jh-vid64.ini
+# //-Bug604581, shenwenbin.wt, add, 20201203, panel noise and TP fiddling report point
+
 quiet_cmd_fwbin = MK_FW   $@
       cmd_fwbin = FWNAME="$(patsubst firmware/%.gen.S,%,$@)";		     \
 		  FWSTR="$(subst /,_,$(subst .,_,$(subst -,_,$(patsubst	     \
@@ -42,14 +77,46 @@ wordsize_deps := $(wildcard include/config/64bit.h include/config/32bit.h \
 		include/config/x86_32.h include/config/x86_64.h \
 		firmware/Makefile)
 
+$(patsubst %,$(obj)/%.gen.S, $(fw-shipped-y)): %: $(wordsize_deps)
+	$(call cmd,fwbin,$(patsubst %.gen.S,%,$@))
 $(patsubst %,$(obj)/%.gen.S, $(fw-external-y)): %: $(wordsize_deps) \
 		include/config/extra/firmware/dir.h
 	$(call cmd,fwbin,$(fwabs)/$(patsubst $(obj)/%.gen.S,%,$@))
 
 # The .o files depend on the binaries directly; the .S files don't.
+$(patsubst %,$(obj)/%.gen.o, $(fw-shipped-y)): %.gen.o: %
 $(patsubst %,$(obj)/%.gen.o, $(fw-external-y)): $(obj)/%.gen.o: $(fwdir)/%
 
+# .ihex is used just as a simple way to hold binary files in a source tree
+# where binaries are frowned upon. They are directly converted with objcopy.
+$(obj)/%: $(obj)/%.ihex
+	$(call cmd,ihex)
+
+# Don't depend on ihex2fw if we're installing and it already exists.
+# Putting it after | in the dependencies doesn't seem sufficient when
+# we're installing after a cross-compile, because ihex2fw has dependencies
+# on stuff like /usr/lib/gcc/ppc64-redhat-linux/4.3.0/include/stddef.h and 
+# thus wants to be rebuilt. Which it can't be, if the prebuilt kernel tree
+# is exported read-only for someone to run 'make install'.
+ifeq ($(INSTALL):$(wildcard $(obj)/ihex2fw),install:$(obj)/ihex2fw)
+ihex2fw_dep :=
+else
+ihex2fw_dep := $(obj)/ihex2fw
+endif
+
+# .HEX is also Intel HEX, but where the offset and length in each record
+# is actually meaningful, because the firmware has to be loaded in a certain
+# order rather than as a single binary blob. Thus, we convert them into our
+# more compact binary representation of ihex records (<linux/ihex.h>)
+$(obj)/%.fw: $(obj)/%.HEX $(ihex2fw_dep)
+	$(call cmd,ihex2fw)
+
+# .H16 is our own modified form of Intel HEX, with 16-bit length for records.
+$(obj)/%.fw: $(obj)/%.H16 $(ihex2fw_dep)
+	$(call cmd,h16tofw)
+
 obj-y				 += $(patsubst %,%.gen.o, $(fw-external-y))
+obj-$(CONFIG_FIRMWARE_IN_KERNEL) += $(patsubst %,%.gen.o, $(fw-shipped-y))
 
 ifeq ($(KBUILD_SRC),)
 # Makefile.build only creates subdirectories for O= builds, but external
@@ -57,5 +124,11 @@ ifeq ($(KBUILD_SRC),)
 _dummy := $(foreach d,$(addprefix $(obj)/,$(dir $(fw-external-y))), $(shell [ -d $(d) ] || mkdir -p $(d)))
 endif
 
-targets := $(patsubst $(obj)/%,%, \
-                                $(shell find $(obj) -name \*.gen.S 2>/dev/null))
+# Remove .S files and binaries created from ihex
+# (during 'make clean' .config isn't included so they're all in $(fw-shipped-))
+targets := $(fw-shipped-) $(patsubst $(obj)/%,%, \
+				$(shell find $(obj) -name \*.gen.S 2>/dev/null))
+
+# Without this, built-in.o won't be created when it's empty, and the
+# final vmlinux link will fail.
+obj- := dummy
