@@ -25,6 +25,11 @@
 #include <linux/ftrace.h>
 #include <linux/compiler.h>
 
+#ifdef CONFIG_SEC_DEBUG_SUMMARY
+#include <linux/sec_debug.h>
+#include <linux/sec_debug_summary.h>
+#endif
+
 /*
  * These will be re-linked against their real values
  * during the second link stage.
@@ -47,6 +52,36 @@ extern const u8 kallsyms_token_table[] __weak;
 extern const u16 kallsyms_token_index[] __weak;
 
 extern const unsigned long kallsyms_markers[] __weak;
+
+#ifdef CONFIG_SEC_DEBUG_SUMMARY
+void sec_debug_summary_set_kallsyms_info(
+		struct sec_debug_summary_data_apss *apss)
+{
+	if (!IS_ENABLED(CONFIG_KALLSYMS_BASE_RELATIVE)) {
+		apss->ksyms.addresses_pa = __pa(kallsyms_addresses);
+		apss->ksyms.relative_base = 0x0;
+		apss->ksyms.offsets_pa = 0x0;
+	} else {
+		apss->ksyms.addresses_pa = 0x0;
+		apss->ksyms.relative_base = (uint64_t)kallsyms_relative_base;
+		apss->ksyms.offsets_pa = __pa(kallsyms_offsets);
+	}
+	apss->ksyms.names_pa = __pa(kallsyms_names);
+	apss->ksyms.num_syms = kallsyms_num_syms;
+	apss->ksyms.token_table_pa = __pa(kallsyms_token_table);
+	apss->ksyms.token_index_pa = __pa(kallsyms_token_index);
+	apss->ksyms.markers_pa = __pa(kallsyms_markers);
+
+	apss->ksyms.sect.sinittext = (uintptr_t)_sinittext;
+	apss->ksyms.sect.einittext = (uintptr_t)_einittext;
+	apss->ksyms.sect.stext = (uintptr_t)_stext;
+	apss->ksyms.sect.etext = (uintptr_t)_etext;
+	apss->ksyms.sect.end = (uintptr_t)_end;
+
+	apss->ksyms.kallsyms_all = all_var;
+	apss->ksyms.magic = SEC_DEBUG_SUMMARY_MAGIC1;
+}
+#endif
 
 /*
  * Expand a compressed symbol data into the resulting uncompressed string,

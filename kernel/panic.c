@@ -33,6 +33,14 @@
 #include <asm/sections.h>
 #include <soc/qcom/minidump.h>
 
+#ifdef CONFIG_SEC_DEBUG_SUMMARY
+#include <linux/sec_debug.h>
+#include <linux/sec_debug_summary.h>
+#endif
+#ifdef CONFIG_USER_RESET_DEBUG
+#include <linux/sec_debug_user_reset.h>
+#endif
+
 #define PANIC_TIMER_STEP 100
 #define PANIC_BLINK_SPD 18
 
@@ -199,6 +207,10 @@ void panic(const char *fmt, ...)
 	int old_cpu, this_cpu;
 	bool _crash_kexec_post_notifiers = crash_kexec_post_notifiers;
 
+#ifdef CONFIG_USER_RESET_DEBUG
+	sec_debug_store_extc_idx(false);
+#endif
+
 	if (panic_on_warn) {
 		/*
 		 * This thread may hit another WARN() in the panic path.
@@ -254,6 +266,10 @@ void panic(const char *fmt, ...)
 	 */
 	if (!test_taint(TAINT_DIE) && oops_in_progress <= 1)
 		dump_stack();
+#endif
+#ifdef CONFIG_SEC_DEBUG_SUMMARY
+	sec_debug_save_panic_info(buf,
+			(unsigned long)__builtin_return_address(0));
 #endif
 
 	/*

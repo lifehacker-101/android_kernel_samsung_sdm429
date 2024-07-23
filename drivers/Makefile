@@ -193,5 +193,8 @@ obj-$(CONFIG_SIOX)		+= siox/
 obj-$(CONFIG_GNSS)		+= gnss/
 obj-$(CONFIG_SENSORS_SSC)	+= sensors/
 
+# CONFIG_SEC_DEBUG
+obj-y				+= debug/
+
 # CONFIG_SS_VIBRATOR
 obj-y				+= motor/

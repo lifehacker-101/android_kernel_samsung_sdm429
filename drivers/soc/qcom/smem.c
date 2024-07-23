@@ -904,7 +904,7 @@ static int qcom_smem_set_global_partition(struct qcom_smem *smem)
 	}
 
 	phys_addr = smem->regions[0].aux_base + le32_to_cpu(entry->offset);
-	header = devm_ioremap_wc(smem->dev,
+	header = devm_ioremap_nocache(smem->dev,
 				  phys_addr, le32_to_cpu(entry->size));
 	if (!header)
 		return -ENOMEM;
@@ -992,7 +992,7 @@ static int qcom_smem_enumerate_partitions(struct qcom_smem *smem,
 
 		phys_addr = smem->regions[0].aux_base +
 				le32_to_cpu(entry->offset);
-		header = devm_ioremap_wc(smem->dev,
+		header = devm_ioremap_nocache(smem->dev,
 					  phys_addr, le32_to_cpu(entry->size));
 		if (!header)
 			return -ENOMEM;
@@ -1063,7 +1063,7 @@ static int qcom_smem_map_memory(struct qcom_smem *smem, struct device *dev,
 
 	smem->regions[i].aux_base = (u32)r.start;
 	smem->regions[i].size = resource_size(&r);
-	smem->regions[i].virt_base = devm_ioremap_wc(dev, r.start, resource_size(&r));
+	smem->regions[i].virt_base = devm_ioremap_nocache(dev, r.start, resource_size(&r));
 	if (!smem->regions[i].virt_base)
 		return -ENOMEM;
 
@@ -1091,9 +1091,9 @@ static int qcom_smem_map_toc(struct qcom_smem *smem, struct device *dev,
 	smem->regions[i].aux_base = (u32)r.start;
 	smem->regions[i].size = resource_size(&r);
 	/* map starting 4K for smem header */
-	smem->regions[i].virt_base = devm_ioremap_wc(dev, r.start, SZ_4K);
+	smem->regions[i].virt_base = devm_ioremap_nocache(dev, r.start, SZ_4K);
 	/* map last 4k for toc */
-	smem->ptable_base = devm_ioremap_wc(dev,
+	smem->ptable_base = devm_ioremap_nocache(dev,
 				r.start + resource_size(&r) - SZ_4K, SZ_4K);
 
 	if (!smem->regions[i].virt_base || !smem->ptable_base)
@@ -1128,7 +1128,7 @@ static int qcom_smem_map_legacy(struct qcom_smem *smem)
 	devm_iounmap(smem->dev, smem->regions[0].virt_base);
 
 	smem->regions[0].size = p_size;
-	smem->regions[0].virt_base = devm_ioremap_wc(smem->dev,
+	smem->regions[0].virt_base = devm_ioremap_nocache(smem->dev,
 						      phys_addr, p_size);
 
 	if (!smem->regions[0].virt_base)

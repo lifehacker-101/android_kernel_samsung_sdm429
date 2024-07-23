@@ -33,6 +33,9 @@ void __init dump_stack_set_arch_desc(const char *fmt, ...)
 	vsnprintf(dump_stack_arch_desc_str, sizeof(dump_stack_arch_desc_str),
 		  fmt, args);
 	va_end(args);
+#ifdef CONFIG_SEC_DEBUG_SUMMARY
+        sec_debug_arch_desc = (char *)dump_stack_arch_desc_str;
+#endif
 }
 
 /**

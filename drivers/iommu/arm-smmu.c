@@ -73,6 +73,11 @@
 #include <linux/uaccess.h>
 #include <linux/bitfield.h>
 
+#ifdef CONFIG_USER_RESET_DEBUG
+#include <linux/sec_debug.h>
+#include <linux/sec_debug_user_reset.h>
+#endif
+
 /*
  * Apparently, some Qualcomm arm64 platforms which appear to expose their SMMU
  * global register space are still, in fact, using a hypervisor to mediate it
@@ -2047,6 +2052,10 @@ static irqreturn_t arm_smmu_context_fault(int irq, void *dev)
 				      DEFAULT_RATELIMIT_INTERVAL,
 				      DEFAULT_RATELIMIT_BURST);
 
+#ifdef CONFIG_USER_RESET_DEBUG
+	ex_info_smmu_t sec_dbg_smmu;
+#endif
+
 	ret = arm_smmu_power_on(smmu->pwr);
 	if (ret)
 		return IRQ_NONE;
@@ -2063,6 +2072,11 @@ static irqreturn_t arm_smmu_context_fault(int irq, void *dev)
 	if (fatal_asf && (fsr & FSR_ASF)) {
 		dev_err(smmu->dev,
 			"Took an address size fault.  Refusing to recover.\n");
+#ifdef CONFIG_USER_RESET_DEBUG
+		snprintf(sec_dbg_smmu.dev_name, sizeof(sec_dbg_smmu.dev_name), "%s", dev_name(smmu->dev));
+		sec_dbg_smmu.fsr = fsr;
+		sec_debug_save_smmu_info(&sec_dbg_smmu);
+#endif
 		BUG();
 	}
 
@@ -2134,6 +2148,19 @@ static irqreturn_t arm_smmu_context_fault(int irq, void *dev)
 		if (!non_fatal_fault) {
 			dev_err(smmu->dev,
 				"Unhandled arm-smmu context fault!\n");
+#ifdef CONFIG_USER_RESET_DEBUG
+			snprintf(sec_dbg_smmu.dev_name, sizeof(sec_dbg_smmu.dev_name), "%s", dev_name(smmu->dev));
+			sec_dbg_smmu.fsr = fsr;
+			sec_dbg_smmu.fsynr0 = fsynr;
+			sec_dbg_smmu.iova = iova;
+			sec_dbg_smmu.far = (unsigned long)iova;
+			sec_dbg_smmu.cbndx = cfg->cbndx;
+			sec_dbg_smmu.phys_soft = phys_soft;
+			sec_dbg_smmu.phys_atos = phys_atos; 
+			sec_dbg_smmu.sid = frsynra;
+
+			sec_debug_save_smmu_info(&sec_dbg_smmu);
+#endif
 			BUG();
 		}
 	}
