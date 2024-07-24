@@ -25,11 +25,6 @@
 #include <linux/moduleparam.h>
 
 extern struct smb_charger *wt_smbchip;
-extern int smb5_get_adc_data(struct smb_charger *chg, int channel, union power_supply_propval *val);
-enum {
-	USBIN_CURRENT,
-	USBIN_VOLTAGE,
-};
 //-Bug 600732,xushengjuan.wt,modify,20201118,S86117,charger bring up
 
 #define smblib_err(chg, fmt, ...)		\
@@ -7562,13 +7557,18 @@ static void period_update(struct work_struct *work)
 		return;
 	}
 	//+Bug 487724 caijiaqi.wt,ADD,20191009,S86119 without adaptor plug into device,device show charging
-	rc = smb5_get_adc_data(chip, USBIN_VOLTAGE, &val);
-	if(rc < 0){
-                usbin_v = 0;
-                pr_err("pmic smb5_get_adc_data USBIN_VOLTAGE fail\n!!");
-        } else {
-                usbin_v = val.intval;
-        }
+	if (chg->iio.usbin_v_chan) {
+		rc = iio_read_channel_processed(chg->iio.usbin_v_chan, &val->intval);
+		if(rc < 0){
+			usbin_v = 0;
+			pr_err("pmic iio_read_channel_processed usbin_v_chan fail\n!!");
+		} else {
+			usbin_v = val.intval;
+		}
+	} else {
+		usbin_v = 0;
+		pr_err("pmic iio_read_channel_processed usbin_v_chan fail\n!!");
+	}
 	//-Bug 487724 caijiaqi.wt,ADD,20191009,S86119 without adaptor plug into device,device show charging
 	rc = smblib_get_prop_from_bms(chip,
 			POWER_SUPPLY_PROP_VOLTAGE_NOW, &val);
@@ -7591,13 +7591,18 @@ static void period_update(struct work_struct *work)
 	smblib_get_prop_usb_present(chip, &val);
 	usb_p = val.intval;
 	//+Bug 487724 caijiaqi.wt,ADD,20191009,S86119 without adaptor plug into device,device show charging
-	rc = smb5_get_adc_data(chip, USBIN_CURRENT, &val);
-	if(rc < 0){
-                usbin_i = 0;
-                pr_err("pmic smb5_get_adc_data USBIN_CURRENT fail\n!!");
-        } else {
-                usbin_i = val.intval;
-        }
+	if (chg->iio.usbin_i_chan) {
+		rc = iio_read_channel_processed(chg->iio.usbin_i_chan, &val->intval);
+		if(rc < 0){
+			usbin_i = 0;
+			pr_err("pmic iio_read_channel_processed usbin_i_chan fail\n!!");
+		} else {
+			usbin_i = val.intval;
+		}
+	} else {
+		usbin_i = 0;
+			pr_err("pmic iio_read_channel_processed usbin_i_chan fail\n!!");
+	}
 	//-Bug 487724 caijiaqi.wt,ADD,20191009,S86119 without adaptor plug into device,device show charging
 	printk_counter++;
 
