@@ -590,7 +590,6 @@ int __init sec_debug_summary_init(void)
 	summary_set_task_info(secdbg_apss);
 
 	summary_set_lpm_info_cluster(secdbg_apss);
-	summary_set_lpm_info_runqueues(secdbg_apss);
 
 	summary_set_msm_memdump_info(secdbg_apss);
 

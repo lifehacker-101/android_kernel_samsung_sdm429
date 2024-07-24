@@ -482,7 +482,6 @@ extern void sec_debug_summary_set_rtb_info(
 
 extern void summary_set_lpm_info_cci(uint64_t phy_addr);
 extern void summary_set_lpm_info_cluster(struct sec_debug_summary_data_apss *apss);
-extern void summary_set_lpm_info_runqueues(struct sec_debug_summary_data_apss *apss);
 extern void summary_set_msm_memdump_info(struct sec_debug_summary_data_apss *apss);
 
 extern void sec_debug_summary_bark_dump(
