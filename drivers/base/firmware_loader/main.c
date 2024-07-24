@@ -284,10 +284,13 @@ static void free_fw_priv(struct fw_priv *fw_priv)
 static char fw_path_para[256];
 static const char * const fw_path[] = {
 	fw_path_para,
+//bug 601075 ,xuyanan,wt,ADD,20201118,add sar sensor bring
+        "/vendor/firmware/",
 	"/lib/firmware/updates/" UTS_RELEASE,
 	"/lib/firmware/updates",
 	"/lib/firmware/" UTS_RELEASE,
-	"/lib/firmware"
+	"/lib/firmware",
+	"/vendor/firmware-modem/image"
 };
 
 /*
