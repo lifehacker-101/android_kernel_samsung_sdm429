@@ -12,6 +12,7 @@
 
 /* +Bug603949, qiuyonghui.wt, 20201210, add for mbhc adc detect */
 #ifdef  CONFIG_ARCH_MSM8937
+#include <linux/iio/consumer.h>
 #include <linux/qpnp/qpnp-adc.h>
 #endif
 /* -Bug603949, qiuyonghui.wt, 20201210, add for mbhc adc detect */
@@ -444,7 +445,7 @@ struct wcd_mbhc_config {
     int hph_in_gpio;
 /* +Bug603949, qiuyonghui.wt, 20201210, add for mbhc adc detect */
     enum qpnp_vadc_channels adc_channel;
-    struct qpnp_vadc_chip *vadc_dev;
+    struct iio_channel *channel;
 /* -Bug603949, qiuyonghui.wt, 20201210, add for mbhc adc detect */
 #endif
 /* -Bug601073, qiuyonghui.wt, 20201117, add, audio bring up */

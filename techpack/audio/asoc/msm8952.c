@@ -3633,12 +3633,12 @@ parse_mclk_freq:
                     "%s: invalid qcom,channel-num=%d specified\n",
                     __func__, mbhc_cfg.adc_channel);
         } else {
-            mbhc_cfg.vadc_dev = qpnp_get_vadc(&pdev->dev,
+			mbhc_cfg.channel = iio_channel_get(&pdev->dev,
                     "hph_mic");
-            if (IS_ERR(mbhc_cfg.vadc_dev)) {
-                ret = PTR_ERR(mbhc_cfg.vadc_dev);
+			if (IS_ERR(mbhc_cfg.channel)) {
+                ret = PTR_ERR(mbhc_cfg.channel);
                 if (ret != -EPROBE_DEFER)
-                    pr_err("vadc property missing\n");
+                    pr_err("vadc channel property missing\n");
             }
         }
     }

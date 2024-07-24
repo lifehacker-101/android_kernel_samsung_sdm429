@@ -46,18 +46,18 @@ int adc_hph_en = 1;
 static int qpnp_adc_read_mv(struct wcd_mbhc *mbhc)
 {
     struct wcd_mbhc_config *mbhc_cfg = NULL;
-    struct qpnp_vadc_result result = {0};
+	int result;
     int rc = 0;
 
     if (mbhc)
         mbhc_cfg = mbhc->mbhc_cfg;
 
-    if (mbhc_cfg && mbhc_cfg->vadc_dev) {
-        rc = qpnp_vadc_read(mbhc_cfg->vadc_dev, mbhc_cfg->adc_channel, &result);
-        printk("%s:rc %d, %lld mV\n", __func__, rc, result.physical / 1000);
+    if (mbhc_cfg && mbhc_cfg->channel) {
+		rc = iio_read_channel_processed(mbhc_cfg->channel, &result);
+        printk("%s:rc %d, %lld mV\n", __func__, rc, result / 1000);
     }
 
-    return (rc < 0) ? 0 : (result.physical / 1000);
+    return (rc < 0) ? 0 : (result / 1000);
 }
 
 static int wcd_mbhc_get_plug_by_adc(int adc_result)
