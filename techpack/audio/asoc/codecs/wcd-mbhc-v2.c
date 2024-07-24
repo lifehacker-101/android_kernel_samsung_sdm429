@@ -552,12 +552,17 @@ void wcd_mbhc_report_plug(struct wcd_mbhc *mbhc, int insertion,
 {
 	struct snd_soc_component *component = mbhc->component;
 	bool is_pa_on = false;
+	bool is_lineout = false;
 	u8 fsm_en = 0;
 
 	WCD_MBHC_RSC_ASSERT_LOCKED(mbhc);
 
 	pr_debug("%s: enter insertion %d hph_status %x\n",
 		 __func__, insertion, mbhc->hph_status);
+	if(jack_type == SND_JACK_LINEOUT){
+		jack_type = SND_JACK_HEADPHONE;
+		pr_err("%s: audiock LINEOUT to HEADPHONE insertion %d hph_status %x\n",__func__, insertion, mbhc->hph_status);
+	}
 	if (!insertion) {
 		/* Report removal */
 		mbhc->hph_status &= ~jack_type;
@@ -694,7 +699,7 @@ void wcd_mbhc_report_plug(struct wcd_mbhc *mbhc, int insertion,
 						 fsm_en);
 			if ((mbhc->zl > mbhc->mbhc_cfg->linein_th) &&
 				(mbhc->zr > mbhc->mbhc_cfg->linein_th) &&
-				(jack_type == SND_JACK_HEADPHONE)) {
+				(jack_type == SND_JACK_HEADPHONE) && is_lineout) {
 				jack_type = SND_JACK_LINEOUT;
 				mbhc->force_linein = true;
 				mbhc->current_plug = MBHC_PLUG_TYPE_HIGH_HPH;
@@ -717,7 +722,7 @@ void wcd_mbhc_report_plug(struct wcd_mbhc *mbhc, int insertion,
 		 * will not be correct resulting in lineout detected
 		 * as headphone.
 		 */
-		if ((is_pa_on) && mbhc->force_linein == true) {
+		if ((is_pa_on) && mbhc->force_linein == true && is_lineout) {
 			jack_type = SND_JACK_LINEOUT;
 			mbhc->current_plug = MBHC_PLUG_TYPE_HIGH_HPH;
 			if (mbhc->hph_status) {
@@ -744,6 +749,8 @@ void wcd_mbhc_report_plug(struct wcd_mbhc *mbhc, int insertion,
 				    WCD_MBHC_JACK_MASK);
 		wcd_mbhc_clr_and_turnon_hph_padac(mbhc);
 	}
+	printk("%s:audiock mbhc insertion %d, jack_type %x, hph_status %x, RL %d ohm, RR %d\n",
+	__func__, insertion, jack_type, mbhc->hph_status, mbhc->zl, mbhc->zr);
 	pr_debug("%s: leave hph_status %x\n", __func__, mbhc->hph_status);
 }
 EXPORT_SYMBOL(wcd_mbhc_report_plug);
@@ -1206,6 +1213,7 @@ static irqreturn_t wcd_mbhc_btn_press_handler(int irq, void *data)
 		WARN(1, "Button pressed twice without release event\n");
 		mbhc->mbhc_cb->lock_sleep(mbhc, false);
 	}
+	printk("%s: audiock mbhc button press %x\n", __func__, mbhc->buttons_pressed);
 done:
 	pr_debug("%s: leave\n", __func__);
 	WCD_MBHC_RSC_UNLOCK(mbhc);
@@ -1269,6 +1277,7 @@ static irqreturn_t wcd_mbhc_release_handler(int irq, void *data)
 						0, mbhc->buttons_pressed);
 			}
 		}
+		printk("%s: %s audiock mbhc button press %x\n", __func__,((ret == 0) ? "long" : ""), mbhc->buttons_pressed);
 		mbhc->buttons_pressed &= ~WCD_MBHC_JACK_BUTTON_MASK;
 	}
 exit:

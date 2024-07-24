@@ -57,6 +57,10 @@
 #define CREATE_TRACE_POINTS
 #include "sde_trace.h"
 
+#if defined(CONFIG_SEC_DEBUG)
+#include <linux/sec_debug.h>
+#endif
+
 /* defines for secure channel call */
 #define MEM_PROTECT_SD_CTRL_SWITCH 0x18
 #define MDP_DEVICE_ID            0x1A
@@ -740,6 +744,14 @@ static int _sde_kms_release_splash_buffer(struct sde_kms *sde_kms,
 
 	/* leave ramdump memory only if base address matches */
 	if (ramdump_base == mem_addr &&
+#if defined(CONFIG_SEC_DEBUG)
+			/* case 1) upload mode: release splash memory except disp_rdump_memory
+			 *         which is used for framebuffer in upload mode bootloader
+			 * case 2) None-upload mode: release whole splash memory
+			 *         which is used for framebuffer in normal booitng mode bootloader
+			 */
+			sec_debug_is_enabled() &&
+#endif
 			ramdump_buffer_size <= splash_buffer_size) {
 		mem_addr +=  ramdump_buffer_size;
 		splash_buffer_size -= ramdump_buffer_size;
@@ -758,6 +770,11 @@ static int _sde_kms_release_splash_buffer(struct sde_kms *sde_kms,
 	}
 	for (pfn_idx = pfn_start; pfn_idx < pfn_end; pfn_idx++)
 		free_reserved_page(pfn_to_page(pfn_idx));
+
+#if defined(CONFIG_SEC_DEBUG)
+	SDE_INFO("release splash buffer: addr: %x, size: %x, sec_debug: %d\n",
+			mem_addr, splash_buffer_size, sec_debug_is_enabled());
+#endif
 
 	return ret;
 
