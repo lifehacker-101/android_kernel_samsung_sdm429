@@ -28,11 +28,13 @@
 #include <linux/io.h>
 #include <linux/platform_device.h>
 #include <linux/module.h>
-//#include <linux/sched/clock.h>
+#include <linux/of.h>
+#include <linux/sched/clock.h>
 #include <linux/slab.h>
 #include <asm/unaligned.h>
 
-#include <linux/sec_bsp.h>
+#include <linux/sec_debug.h>
+#include <linux/sec_bootstat.h>
 
 /* This defines are for PSTORE */
 #define SS_LOGGER_LEVEL_HEADER		(1)
@@ -778,19 +780,25 @@ MODULE_PARM_DESC(mem_size,
 
 static char *platform_log_buf;
 static size_t platform_log_idx;
-static inline void emit_sec_platform_log_char(char c)
-{
-	platform_log_buf[platform_log_idx & (size_t)(mem_size - 1)] = c;
-	platform_log_idx++;
-}
 
-static inline void ss_hook_logger(
-			 const char *buf, size_t size)
+static inline void ss_hook_logger(const char *buf, size_t size)
 {
-	size_t i;
+	size_t f_len, s_len, remain_space;
+	size_t idx;
 
-	for (i = 0; i < size; i++)
-		emit_sec_platform_log_char(buf[i]);
+	if (unlikely(!platform_log_buf))
+		return;
+
+	idx = platform_log_idx % mem_size;
+	remain_space = mem_size - idx;
+	f_len = min(size, remain_space);
+	memcpy_toio(&(platform_log_buf[idx]), buf, f_len);
+
+	s_len = size - f_len;
+	if (unlikely(s_len))
+		memcpy_toio(platform_log_buf, &buf[f_len], s_len);
+
+	platform_log_idx += size;
 }
 
 struct ss_plog_platform_data {
@@ -804,11 +812,9 @@ static int ss_plog_parse_dt(struct platform_device *pdev,
 	struct resource *res;
 
 	dev_dbg(&pdev->dev, "using Device Tree\n");
-	pr_err("%s:using Device Tree\n",__func__);
 
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	if (unlikely(!res)) {
-		pr_err("%s:failed to locate DT\n",__func__);
 		dev_err(&pdev->dev,
 			"failed to locate DT /reserved-memory resource\n");
 		return -EINVAL;
@@ -831,24 +837,24 @@ static int ss_plog_probe(struct platform_device *pdev)
 		pdata = devm_kzalloc(&pdev->dev, sizeof(*pdata), GFP_KERNEL);
 		if (unlikely(!pdata)) {
 			err = -ENOMEM;
-			goto fail_out;
+			return err;
 		}
 
 		err = ss_plog_parse_dt(pdev, pdata);
 		if (unlikely(err < 0))
-			goto fail_out;
+			goto fail_out_parse_dt;
 	}
 
 	if (unlikely(!pdata->mem_size)) {
 		pr_err("The memory size must be non-zero\n");
 		err = -ENOMEM;
-		goto fail_out;
+		goto fail_out_check_mem_size;
 	}
 
 	mem_size = pdata->mem_size;
 	mem_address = pdata->mem_address;
 
-	pr_err("attached 0x%llxx@0x%llx\n", mem_size, mem_address);
+	pr_info("attached 0x%llxx@0x%llx\n", mem_size, mem_address);
 
 	platform_set_drvdata(pdev, pdata);
 
@@ -856,14 +862,17 @@ static int ss_plog_probe(struct platform_device *pdev)
 				(resource_size_t)mem_size, "ss_plog")) {
 		pr_err("request mem region (0x%llx@0x%llx) failed\n",
 			mem_size, mem_address);
-		goto fail_out;
+		goto fail_request_mem_region;
 	}
 
-	va = ioremap_nocache((phys_addr_t)mem_address, (size_t)mem_size);
+	if (sec_debug_is_enabled())
+		va = ioremap_wc((phys_addr_t)mem_address, (size_t)mem_size);
+	else
+		va = ioremap_cache((phys_addr_t)mem_address, (size_t)mem_size);
 	if (unlikely(!va)) {
 		pr_err("Failed to remap plaform log region\n");
 		err = -ENOMEM;
-		goto fail_out;
+		goto fail_remap_mem_region;
 	}
 
 	platform_log_buf = va;
@@ -874,13 +883,24 @@ static int ss_plog_probe(struct platform_device *pdev)
 	if (unlikely(!logger.buffer)) {
 		pr_err("Failed to alloc memory for buffer\n");
 		err = -ENOMEM;
-		goto fail_out;
+		goto fail_alloc_buffer;
 	}
-	pr_err("logger buffer alloc address: 0x%pK\n", logger.buffer);
+	pr_info("logger buffer alloc address: 0x%pK\n", logger.buffer);
 
 	return 0;
 
-fail_out:
+fail_alloc_buffer:
+	iounmap(va);
+
+fail_remap_mem_region:
+	release_mem_region((resource_size_t)mem_address,
+			(resource_size_t)mem_size);
+
+fail_out_parse_dt:
+fail_out_check_mem_size:
+fail_request_mem_region:
+	devm_kfree(&pdev->dev, pdata);
+
 	return err;
 }
 
