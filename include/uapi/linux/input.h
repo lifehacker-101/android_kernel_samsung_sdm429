@@ -19,6 +19,12 @@
 
 #include "input-event-codes.h"
 
+//+bug601075,sheqihao.wt, modify, 2020.11.13, N8-R Project tp Bringup
+/*
+ * sec Log
+ */
+#define SECLOG			"[sec_input]"
+
 /*
  * The event structure itself
  * Note that __USE_TIME_BITS64 is defined by libc based on
