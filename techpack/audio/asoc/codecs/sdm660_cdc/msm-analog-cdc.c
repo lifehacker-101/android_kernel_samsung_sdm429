@@ -3468,17 +3468,18 @@ static int msm_anlg_cdc_codec_enable_left_spk_ext_pa(struct snd_soc_dapm_widget 
                         struct snd_kcontrol *kcontrol,
                         int event)
 {
-    struct snd_soc_codec *codec = snd_soc_dapm_to_codec(w->dapm);
+	struct snd_soc_component *component =
+					snd_soc_dapm_to_component(w->dapm);
 
-    dev_dbg(codec->dev, "%s: %s event = %d\n", __func__, w->name, event);
+    dev_dbg(component->dev, "%s: %s event = %d\n", __func__, w->name, event);
     switch (event) {
     case SND_SOC_DAPM_POST_PMU:
-        dev_dbg(codec->dev,
+        dev_dbg(component->dev,
             "%s: enable left speaker PA\n", __func__);
         aw87319l_audio_speaker();
         break;
     case SND_SOC_DAPM_PRE_PMD:
-        dev_dbg(codec->dev,
+        dev_dbg(component->dev,
             "%s: disable left speaker PA\n", __func__);
         aw87319l_audio_off();
         break;
@@ -3490,17 +3491,18 @@ static int msm_anlg_cdc_codec_enable_right_spk_ext_pa(struct snd_soc_dapm_widget
                         struct snd_kcontrol *kcontrol,
                         int event)
 {
-    struct snd_soc_codec *codec = snd_soc_dapm_to_codec(w->dapm);
+	struct snd_soc_component *component =
+					snd_soc_dapm_to_component(w->dapm);
 
-    dev_dbg(codec->dev, "%s: %s event = %d\n", __func__, w->name, event);
+    dev_dbg(component->dev, "%s: %s event = %d\n", __func__, w->name, event);
     switch (event) {
     case SND_SOC_DAPM_POST_PMU:
-        dev_dbg(codec->dev,
+        dev_dbg(component->dev,
             "%s: enable right speaker PA\n", __func__);
         aw87319r_audio_speaker();
         break;
     case SND_SOC_DAPM_PRE_PMD:
-        dev_dbg(codec->dev,
+        dev_dbg(component->dev,
             "%s: disable right speaker PA\n", __func__);
         aw87319r_audio_off();
         break;
@@ -3512,17 +3514,18 @@ static int msm_anlg_cdc_codec_enable_left_vspk_ext_pa(struct snd_soc_dapm_widget
                         struct snd_kcontrol *kcontrol,
                         int event)
 {
-    struct snd_soc_codec *codec = snd_soc_dapm_to_codec(w->dapm);
+	struct snd_soc_component *component =
+					snd_soc_dapm_to_component(w->dapm);
 
-    dev_dbg(codec->dev, "%s: %s event = %d\n", __func__, w->name, event);
+    dev_dbg(component->dev, "%s: %s event = %d\n", __func__, w->name, event);
     switch (event) {
     case SND_SOC_DAPM_POST_PMU:
-        dev_dbg(codec->dev,
+        dev_dbg(component->dev,
             "%s: enable left vspk PA\n", __func__);
         aw87319l_audio_voice_speaker();
         break;
     case SND_SOC_DAPM_PRE_PMD:
-        dev_dbg(codec->dev,
+        dev_dbg(component->dev,
             "%s: disable left vspk PA\n", __func__);
         aw87319l_audio_off();
         break;
@@ -3534,17 +3537,18 @@ static int msm_anlg_cdc_codec_enable_right_vspk_ext_pa(struct snd_soc_dapm_widge
                         struct snd_kcontrol *kcontrol,
                         int event)
 {
-    struct snd_soc_codec *codec = snd_soc_dapm_to_codec(w->dapm);
+	struct snd_soc_component *component =
+					snd_soc_dapm_to_component(w->dapm);
 
-    dev_dbg(codec->dev, "%s: %s event = %d\n", __func__, w->name, event);
+    dev_dbg(component->dev, "%s: %s event = %d\n", __func__, w->name, event);
     switch (event) {
     case SND_SOC_DAPM_POST_PMU:
-        dev_dbg(codec->dev,
+        dev_dbg(component->dev,
             "%s: enable right vspk PA\n", __func__);
         aw87319r_audio_voice_speaker();
         break;
     case SND_SOC_DAPM_PRE_PMD:
-        dev_dbg(codec->dev,
+        dev_dbg(component->dev,
             "%s: disable right vspk PA\n", __func__);
         aw87319r_audio_off();
         break;
