@@ -844,7 +844,8 @@ static int handle_jeita(struct step_chg_info *chip)
 	if (chip->jeita_arb_en && fv_uv > 0) {
 		rc = power_supply_get_property(chip->batt_psy,
 				POWER_SUPPLY_PROP_VOLTAGE_NOW, &pval);
-		if (!rc && (pval.intval > fv_uv))
+		//Bug 600732,xushengjuan.wt,modify,20201118,recharged repeatedly during CV stage
+		if (!rc && (pval.intval > (fv_uv + JEITA_SUSPEND_HYST_UV)))
 			vote(chip->usb_icl_votable, JEITA_VOTER, true, 0);
 		else if (pval.intval < (fv_uv - JEITA_SUSPEND_HYST_UV))
 			vote(chip->usb_icl_votable, JEITA_VOTER, false, 0);

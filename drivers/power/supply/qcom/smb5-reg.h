@@ -526,6 +526,9 @@ enum {
 
 #define AICL_RERUN_TIME_CFG_REG			(MISC_BASE + 0x61)
 #define AICL_RERUN_TIME_12S_VAL			0x01
+//+Bug 600732,xushengjuan.wt,modify,20201118,S86117,poweroff charger current drop.
+#define MISC_AICL_TIME_MASK                      GENMASK(1, 0)
+//+Bug 600732,xushengjuan.wt,modify,20201118,S86117,poweroff charger current drop.
 
 #define MISC_THERMREG_SRC_CFG_REG		(MISC_BASE + 0x70)
 #define THERMREG_SW_ICL_ADJUST_BIT		BIT(7)

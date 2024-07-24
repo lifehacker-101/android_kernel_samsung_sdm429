@@ -328,6 +328,12 @@ enum power_supply_property {
 	POWER_SUPPLY_PROP_CLEAR_SOH,
 	POWER_SUPPLY_PROP_FORCE_RECHARGE,
 	POWER_SUPPLY_PROP_FCC_STEPPER_ENABLE,
+//+Bug 600732,xushengjuan.wt,modify,20201118,S86117,add node
+	POWER_SUPPLY_PROP_BATT_CURRENT_EVENT,
+//Bug 439628 caijiaqi.wt,MODIFIY,20190423,modifiy node name batt_mise_event to batt_misc_event
+	POWER_SUPPLY_PROP_BATT_MISC_EVENT,
+//-Bug 437373 caijiaqi.wt, ADD,20190409,P81081 add battery node for customer
+//+Bug 600732,xushengjuan.wt,modify,20201118,S86117,add node
 	POWER_SUPPLY_PROP_TOGGLE_STAT,
 	POWER_SUPPLY_PROP_MAIN_FCC_MAX,
 	POWER_SUPPLY_PROP_FG_RESET,
@@ -453,6 +459,10 @@ enum power_supply_typec_power_role {
 
 enum power_supply_notifier_events {
 	PSY_EVENT_PROP_CHANGED,
+//+Bug 601075   ,xuyanan.wt,20201118,add,sar sensor bringup
+	PSY_EVENT_PROP_ADDED,  
+	PSY_EVENT_PROP_REMOVED,
+//-Bug 601075  ,xuyanan.wt,20201118,add,sar sensor bringup
 };
 
 union power_supply_propval {
@@ -517,8 +527,10 @@ struct power_supply_desc {
 	int use_for_apm;
 };
 
+//+Bug 601075   ,xuyanan.wt,20201118,add,sar sensor bringup
 struct power_supply {
 	const struct power_supply_desc *desc;
+	const char *name; 
 
 	char **supplied_to;
 	size_t num_supplicants;
@@ -526,6 +538,17 @@ struct power_supply {
 	char **supplied_from;
 	size_t num_supplies;
 	struct device_node *of_node;
+
+	/*
+	 * Functions for drivers implementing power supply class.
+	 * These shouldn't be called directly by other drivers for accessing
+	 * this power supply. Instead use power_supply_*() functions (for
+	 * example power_supply_get_property()).
+	 */
+	int (*get_property)(struct power_supply *psy,
+			    enum power_supply_property psp,
+			    union power_supply_propval *val);
+//-Bug 601075   ,xuyanan.wt,20201118,add,sar sensor bringup
 
 	/* Driver private data */
 	void *drv_data;
